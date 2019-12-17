@@ -124,3 +124,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# Configuração para utilizar redis e channel
+# Por conta do redis é possivel utilizar mais coisas no app
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            ### O de cima utilizado para rodar o servidor localmente, enquanto o de baixo provavelmente será para produção
+            "hosts": [("localhost", 6379)],
+            # "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')], 
+        },
+    },
+}

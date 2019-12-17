@@ -13,15 +13,29 @@ class ChatConsumer(AsyncConsumer):
         # função que fará o servidor enviar um response para o websocket
         # enviando um dicionario com o type e utilizando o await para executar o codigo
         # até ser finalizado
-        await self.send({
-            "type":"websocket.accept"
-        })
+
+        ### A função comentada foi para baixo criar todo o Data antes de conectar o socket
+        # await self.send({
+        #     "type":"websocket.accept"
+        # })
         other_user = self.scope['url_route']['kwargs']['username']
         me = self.scope['user']
         print(other_user, me)
         # é necessário utilizar await aqui, pois get_thread é uma função de sync que vira async
         thread_obj = await self.get_thread(me, other_user)
-        print(thread_obj)
+        print(me, thread_obj.id)
+        chat_room = f"thread_{thread_obj.id}" # Chat room name
+        self.chat_room = chat_room
+
+        await self.channel_layer.group_add(
+            chat_room,
+            self.channel_name, # basic atribute for channel_layer
+        )
+
+        await self.send({
+            "type":"websocket.accept"
+        })
+
         # await asyncio.sleep(10)
         
         # await self.send({
@@ -47,13 +61,23 @@ class ChatConsumer(AsyncConsumer):
                 'message': msg,
                 'username': username
             }
-            # enviando a mensagem de volta pro front
-            await self.send({
-                # "type":"websocket.close"
-                "type":"websocket.send",
-                # "text":msg # Para enviar uma msg comum
-                "text": json.dumps(myResponse) # Envia o dicionario myResponse
+
+            new_event = {
+                "type": "websocket.send",
+                "text": json.dumps(myResponse)
+            }
+
+            await self.channel_layer.group_send({
+                self.chat_room,
+                new_event
             })
+            # enviando a mensagem de volta pro front
+            # await self.send({ # Comentado após inserir o Redis para o chat
+            #     # "type":"websocket.close"
+            #     "type":"websocket.send",
+            #     # "text":msg # Para enviar uma msg comum
+            #     "text": json.dumps(myResponse) # Envia o dicionario myResponse
+            # })
     async def websocket_disconnect(self, event):
         print("disconnect", event)
 

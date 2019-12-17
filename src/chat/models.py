@@ -13,6 +13,7 @@ class ThreadManager(models.Manager):
         return qs
 
     ## Função para criar uma nova thread ou pegar a original que será utilizada
+    ## Garante que a Thread criada para o chat será sempre única, baseada nos 2 usuarios
     def get_or_new(self, user, other_username): # get_or_create
         username = user.username
         if username == other_username:
@@ -36,7 +37,7 @@ class ThreadManager(models.Manager):
                 return obj, True
             return None, False
 
-
+### Os dois usuários first e second para não permitir um terceiro entrar no chat
 class Thread(models.Model):
     first        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_thread_first')
     second       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_thread_second')
