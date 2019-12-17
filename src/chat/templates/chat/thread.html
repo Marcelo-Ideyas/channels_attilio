@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3>Thread for {% if user != object.first %}{{ object.first }}{% else %}{{ object.second }}{% endif %}</h3>
+<ul id='chat-items'>
+{% for chat in object.chatmessage_set.all %}
+
+<li>{{ chat.message }} via {{ chat.user }}</li>
+
+{% endfor %}
+</ul>
+
+<form id='form' method='POST'> {% csrf_token %}
+    <input type='hidden' id='myUsername' value='{{ user.username }}'/>
+    {{form.as_p }}
+    <input type='submit' class='btn btn-primary'/>
+</form>
+
+{% endblock %}
+
+{% block script %}
+
+<script>
+// websocket scripts
+
+    // Antes do Min 23
+
+    // console.log(window.location)
+    // loc será utilizado para verificar se o codigo está em produção ou dev
+    var loc = window.location
+    var formData = $("#form")
+    var msgInput = $("#id_message") // ID que aparece no inspecionar do browser, o qual o django utiliza
+    var chatHolder = $("#chat-items") // ID da <ul> do HTML
+    var me = $("#myUsername").val()
+    console.log(me)
+
+    // Para visualizar as variaveis presente no browser foi utilizado a função console.log(window.location)
+    var wsStart =  'ws://'
+    if (loc.protocol == 'https:'){
+        wsStart = 'wss://'
+    }
+    // Endpoint não pode ser '' (vazio)
+    var endpoint = wsStart + loc.host + loc.pathname
+    
+    var socket = new WebSocket(endpoint)
+
+
+    /*functions -> está relacionado com o consumers.py events*/
+    // Mensagem sendo recebida
+    socket.onmessage = function(e){
+        console.log("messsage", e)
+        var chatDataMsg = JSON.parse(e.data)
+
+        // console.log(e.data)
+        chatHolder.append("<li>" + chatDataMsg.message + " via " + chatDataMsg.username + "</li>") // faz com que apareça as mensagens em tempo real
+    }
+    // Mensagem sendo enviada
+    socket.onopen = function(e){
+        console.log("open", e)
+        formData.submit(function(event){
+            event.preventDefault() // previne de acontecer o default que seria gerar o form, ao invés disso envia a info pro back no consumers.py
+            var msgText = msgInput.val()
+            chatHolder.append("<li>" + msgText + " via " + me + "</li>")
+            // var formDataSerialized = formData.serialize()
+            var finalData = {
+                'message': msgText
+            }
+
+            // socket.send(msgText)
+            // socket.send(formDataSerialized) //Envia informação pro back
+            socket.send(JSON.stringify(finalData)) //JSON para enviar diferente tipo de dado
+            // msgInput.val('')
+            formData[0].reset() //com o formData é possível enviar mais de uma informação
+        })
+    }
+    socket.onerror = function(e){
+        console.log("error", e)
+    }
+    socket.onclose = function(e){
+        console.log("close", e)
+    }
+
+</script>
+{% endblock %}
