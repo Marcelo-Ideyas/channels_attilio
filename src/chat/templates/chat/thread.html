@@ -19,6 +19,8 @@
 {% endblock %}
 
 {% block script %}
+<script src='https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.js'>
+</script>
 
 <script>
 // websocket scripts
@@ -42,8 +44,12 @@
     }
     // Endpoint não pode ser '' (vazio)
     var endpoint = wsStart + loc.host + loc.pathname
+    console.log(endpoint)
     
-    var socket = new WebSocket(endpoint)
+    // comentado para utilizar ReconnectWebSocket - 
+    // var socket = new WebSocket(endpoint)
+
+    var socket = new ReconnectingWebSocket(endpoint)
 
 
     /*functions -> está relacionado com o consumers.py events*/
@@ -61,7 +67,7 @@
         formData.submit(function(event){
             event.preventDefault() // previne de acontecer o default que seria gerar o form, ao invés disso envia a info pro back no consumers.py
             var msgText = msgInput.val()
-            chatHolder.append("<li>" + msgText + " via " + me + "</li>")
+            // chatHolder.append("<li>" + msgText + " via " + me + "</li>") // comentado para não gerar uma segunda msg na tela do user que enviou
             // var formDataSerialized = formData.serialize()
             var finalData = {
                 'message': msgText
